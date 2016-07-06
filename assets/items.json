@@ -1,0 +1,11 @@
+{
+	"asset":"assets/itematlas.png",
+	"items":[{
+		"id":0,
+		"name":"Wood log"
+	},{
+		"id":1,
+		"name":"Stone Axe",
+		"chop":2
+	}]
+}

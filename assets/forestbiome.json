@@ -1,0 +1,44 @@
+{
+	"asset": "assets/forestbiome.png",
+	"plants": [{
+		"name":"Bush",
+		"index":0,
+		"growrate": 0.01,
+		"frameWidth":16,
+		"frameHeight":16,
+		"droptable": [0],
+		"dropamounts": [1, 3, 5],
+		"collidable":false,
+		"durability":1
+	},{
+		"name":"Flower",
+		"index":16,
+		"growrate":0.02,
+		"frameWidth":16,
+		"frameHeight":16,
+		"droptable": [0],
+		"dropamounts": [1, 3, 5],
+		"collidable":false,
+		"durability":1
+	},{
+		"name":"GreenTree",
+		"index":32,
+		"growrate":0.02,
+		"frameWidth":16,
+		"frameHeight":48,
+		"droptable": [0],
+		"dropamounts": [1, 3, 5],
+		"collidable":true,
+		"durability":3
+	},{
+		"name":"PinkTree",
+		"index":80,
+		"growrate":0.02,
+		"frameWidth":16,
+		"frameHeight":48,
+		"droptable": [0],
+		"dropamounts": [1, 3, 5],
+		"collidable":true,
+		"durability":3
+	}]
+}

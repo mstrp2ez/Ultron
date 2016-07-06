@@ -1,0 +1,38 @@
+{
+	"elements":{
+		"PlayerInventory": {
+			"p":{
+				"x": "center",
+				"y": "center",
+				"w": 400,
+				"h": 300,
+				"bgcolor": "#777",
+				"visible":false
+			},
+			"cw":{
+				"InventoryCaption":{
+					"p": {
+						"x": 10,
+						"y": 10,
+						"w": 380,
+						"h": 20,
+						"text":"Inventory",
+						"textshadow":"#000",
+						"textshadowx":1,
+						"textshadowy":1
+					}
+				},
+				"InventoryGrid":{
+					"type":"GridWidget",
+					"p": {
+						"x": 15,
+						"y": 60,
+						"w": 200,
+						"h": 100,
+						"gridsize":32
+					}
+				}
+			}
+		}
+	}
+}

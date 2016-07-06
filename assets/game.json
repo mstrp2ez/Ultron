@@ -1,0 +1,188 @@
+[{
+	"UI": {
+		"meta":{
+			"behaviourasset":"js/events/main-menu.js"
+		},
+		"elements":{
+			"bg":{
+				"p":{
+					"x":0,
+					"y":0,
+					"w":800,
+					"h":600,
+					"imgsrc":"assets/starbg.png"
+				},
+				"cw":{
+					"TestBox": {
+						"p": {
+							"x": "center",
+							"y": "center",
+							"w": 250,
+							"h": 150,
+							"imgsrc": "assets/main-menu-bg.png"
+						},
+						"cw":{
+							"MenuContainer":{
+								"p":{
+									"x":0,
+									"y":40,
+									"w":"100%",
+									"h":"100%"
+								},
+								"cw":{
+									"CaptionText":{
+										"p":{
+											"x":85,
+											"y":"center",
+											"w":50,
+											"h":"100%",
+											"font":"32px Arial",
+											"textcolor":"#fff",
+											"text":"Ultron",
+											"textshadow":"#000",
+											"textshadowx":2,
+											"textshadowy":2
+										}
+									},
+									"StartGameBtn":{
+										"p":{
+											"x":90,
+											"y":"bottom",
+											"w":50,
+											"h":100,
+											"font":"16px Arial",
+											"textcolor":"#fff",
+											"text":"Start game",
+											"textshadow":"#000",
+											"textshadowx":2,
+											"textshadowy":2
+										},
+										"events":{
+											"click":"eventTest"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"BitmapFont": {},
+	"properties": {
+		"name": "Scene0"
+	}
+},
+	{
+	"World": {
+		"chunkproperties":{
+			"size":400,
+			"atlas":["assets/tileatlas.png"],
+			"debug":false,
+			"tile":{
+				"size":16,
+				"atlasHeight":48
+			}
+		}
+	},
+	"UI": {
+		"meta":{
+			"behaviourasset":"js/events/game-ui-events.js"
+		},
+		"elements":{
+			"TestBox": {
+				"p": {
+					"x": "center",
+					"y": "bottom",
+					"w": 800,
+					"h": 75,
+					"bgcolor": "#444"
+				},
+				"cw":{
+					"BuildButton":{
+						"p":{
+							"x":40,
+							"y":0,
+							"w":100,
+							"h":20,
+							"text":"Inventory"
+						},
+						"events":{
+							"click":"onInventoryBtnClick"
+						}
+					}
+				}
+			},
+			"PlayerInventory": {
+				"p":{
+					"x": "center",
+					"y": "center",
+					"w": 400,
+					"h": 145,
+					"bgcolor": "#777",
+					"visible":false
+				},
+				"cw":{
+					"InventoryCaption":{
+						"p": {
+							"x": 15,
+							"y": 15,
+							"w": 380,
+							"h": 20,
+							"text":"Inventory",
+							"textshadow":"#000",
+							"textshadowx":1,
+							"textshadowy":1
+						}
+					},
+					"InventoryGrid":{
+						"type":"GridWidget",
+						"p": {
+							"x": 15,
+							"y": 30,
+							"w": 200,
+							"h": 96,
+							"gridsize":32
+						}
+					},
+					"CraftingCaption":{
+						"p": {
+							"x": 230,
+							"y": 15,
+							"w": 380,
+							"h": 20,
+							"text":"Crafting",
+							"textshadow":"#000",
+							"textshadowx":1,
+							"textshadowy":1
+						}
+					},
+					"CraftingGrid":{
+						"type":"GridWidget",
+						"p":{
+							"x": 230,
+							"y": 30,
+							"w": 96,
+							"h": 96,
+							"gridsize":32
+						}
+					},
+					"CraftingResult":{
+						"type":"GridWidget",
+						"p":{
+							"x": 336,
+							"y": 62,
+							"w": 32,
+							"h": 32,
+							"gridsize":32
+						}
+					}
+				}
+			}
+		}
+	},
+	"properties": {
+		"name": "Scene1"
+	}
+}]

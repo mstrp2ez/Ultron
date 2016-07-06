@@ -1,0 +1,6 @@
+{
+	"animationSrc":"assets/playeranim.json",
+	"inventoryMax":64,
+	"walkspeed":2,
+	"UI":"assets/playerui.json"
+}
