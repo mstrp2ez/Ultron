@@ -40,6 +40,7 @@ var HashIndex=function(p_X,p_Y){
 }
 
 var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
+	/* Renderable.call(this); */
 	this.m_Col=p_Col;
 	this.m_Row=p_Row;
 	this.m_AtlasHeight=p_TileProperties.atlasHeight;
@@ -116,7 +117,10 @@ var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
 		return false;
 	}
 }
+/* Tile.prototype=Object.create(Renderable.prototype);
+Tile.prototype.constructor=Tile; */
 var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
+	
 	this.m_Tiles=[];
 	this.m_Origin=p_Origin;
 	/* this.m_AtlasSrc=p_Atlas; */
@@ -350,7 +354,9 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 	}
 }
 
+
 var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
+	Renderable.call(this,0);
 	this.m_TileManager=null;
 	this.m_Entities=[];
 	this.m_ChunkProperties=p_ChunkProperties;
@@ -367,11 +373,6 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		xThis.m_TileManager=new TileManager(xThis.WorldCoordinates(),xThis.m_ChunkProperties.size,xThis.m_ChunkProperties.tile,p_Atlas,xThis);
 		xThis.m_TileManager.FillPerlinNoise(xThis.m_ChunkIndex);
 		xThis.m_TileManager.ReCalculate();
-		
-		xThis.m_NatureSimulator=new NatureSimulator(xThis,xThis.m_ChunkProperties.biome,xThis.m_TileManager);
-		xThis.m_NatureSimulator.Init({x:coords.m_fX,y:coords.m_fY,w:size,h:size},xThis.m_ChunkProperties.tile.size,spawnChunk,function(p_Plants){
-			xThis.m_Entities=xThis.m_Entities.concat(p_Plants);
-		});
 	}
 	this.World=function(){
 		return xThis.m_World;
@@ -482,25 +483,25 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		}
 	}
 }
+Chunk.prototype=Object.create(Renderable.prototype);
+Chunk.prototype.constructor=Chunk;
+
 var World=function(){
 	this.m_Scene=null;
 	this.m_Ctx=null;
 	this.m_Chunks=[];
 	this.m_ViewportChunks=[];
-	this.m_TOD=0;
 	this.m_LastUpdate=0;
 	this.m_SpawnChunk=null;
 	this.m_ChunkProperties={size:64,tile:{size:16}};
-	this.m_Player=null;
-	this.m_TODMask=null;
-	this.m_MaskCanvas=document.getElementById('mask');
-	
+	this.m_Entities=[];
+	this.m_Worker=new Worker(new Vec2d(100,10),this);
+	this.m_Worker.Init('assets/workeranim.json');
 	
 	var xThis=this;
 	this.Init=function(p_Manifest,p_Ctx,p_Scene){
 		xThis.m_Ctx=p_Ctx;
 		xThis.m_Scene=p_Scene;
-		xThis.m_Player=new Player();
 		xThis.m_ChunkProperties=p_Manifest.hasOwnProperty('chunkproperties')?p_Manifest.chunkproperties:xThis.m_ChunkProperties;
 		
 		$.getJSON('assets/forestbiome.json',function(p_Data){ //temporary
@@ -509,49 +510,19 @@ var World=function(){
 			atlasCache.onload=function(){
 				xThis.m_ChunkProperties.biome.atlas=atlasCache;
 				xThis.NewChunk(new HashIndex(0,0));
-				xThis.m_Player.Init(new Vec2d(100,100),'assets/player.json',xThis.m_Scene,xThis.m_SpawnChunk);
-				var ui=xThis.m_Scene.GetSystemByName('UI').s;
-				xThis.m_Player.SetInventoryUI(ui.GetWidgetFromName('InventoryGrid'));
+				
+				
 			}
 			atlasCache.src=xThis.m_ChunkProperties.atlas[0];
-		});
-		
-		xThis.CreateTODMask();
+		}); 
 		
 	}
-	this.OnMouseDown=function(p_Event){
-		
-	}
-	this.CreateTODMask=function(){
-		xThis.m_TODMask=xThis.m_Ctx.createImageData(xThis.m_Ctx.canvas.width,xThis.m_Ctx.canvas.height);
-		var mask=xThis.m_TODMask;
-		
-		var canvasW=xThis.m_Ctx.canvas.width;
-		var canvasH=xThis.m_Ctx.canvas.height;
-		var midPoint=new Vec2d(canvasW/2,canvasH/2);
-		var i,iC=mask.width*mask.height*4;
-		var d=mask.data;
-		for(i=0;i<iC;i+=4){
-			var x0=((i/4)+1)%canvasW;
-			var y0=Math.floor((i/4)/canvasW);
-			var lightness=255;
-			var dist=Math.sqrt((midPoint.m_fX-x0)*(midPoint.m_fX-x0)+(midPoint.m_fY-y0)*(midPoint.m_fY-y0));
-
-			d[i]=0;
-			d[i+1]=0;
-			d[i+2]=0;
-			d[i+3]=dist*2;
-		}
-		var maskCanvas=xThis.m_MaskCanvas;
-		var maskCtx=maskCanvas.getContext('2d');
-		maskCtx.putImageData(xThis.m_TODMask,0,0);
-	}
+	
 	//use index as key, guarantees no chunk key is ever the same, could be costly to iterate chunks though
 	this.NewChunk=function(p_ChunkIndex,p_Shallow){
 		var chunk=xThis.m_Chunks[p_ChunkIndex.ToKey()];
 		if(chunk===undefined){
 			var newChunk=new Chunk(xThis.m_ChunkProperties,p_ChunkIndex,xThis);
-			
 			
 			newChunk.Init(xThis.m_ChunkProperties.biome.atlas);
 			if(xThis.m_SpawnChunk===null){xThis.m_SpawnChunk=newChunk;}
@@ -591,12 +562,6 @@ var World=function(){
 	this.Update=function(p_Delta){
 		xThis.m_ViewportChunks.length=0;
 		
-		xThis.m_Player.Update(p_Delta);
-		xThis.m_TOD+=0.01*((p_Delta-xThis.m_LastUpdate)/1000);
-		xThis.m_LastUpdate=p_Delta;
-		if(xThis.m_TOD>=1){
-			xThis.m_TOD=0;
-		}
 		var currentChunk=null;
 		var canvas=xThis.m_Ctx.canvas;
 		var midPoint=new Vec2d(canvas.width/2,canvas.height/2);
@@ -605,7 +570,6 @@ var World=function(){
 			if(chunk.InViewport()){
 				if(chunk.ContainsPoint(midPoint)){
 					xThis.m_CurrentChunk=chunk;
-					xThis.m_Player.SetCurrentChunk(chunk);
 				}
 				xThis.NewChunk(chunk.m_ChunkIndex);
 				if(chunk.Update){
@@ -614,43 +578,10 @@ var World=function(){
 				xThis.m_ViewportChunks.push(chunk);
 			}
 		}
+		xThis.m_Worker.Update(0);
 	}
 	this.Render=function(p_Ctx){
-		var tilesRendered=0;
-		var tod=360*xThis.m_TOD;
-		tod=Math.cos(tod*(Math.PI/180));
-		tod=tod>0.8?0.8:tod;
-		tod=tod<0?0:tod;
-		var toRender=[];
-		for(var idx in xThis.m_Chunks){
-			if(xThis.m_Chunks[idx].InViewport()){
-				toRender.push(xThis.m_Chunks[idx]);
-			}
-		}
-		
-		
-		var i,iC=toRender.length;
-		for(i=0;i<iC;i++){
-			if(toRender[i].Render){
-				tilesRendered+=toRender[i].Render(p_Ctx);
-			}
-		}
-		
-		xThis.m_Player.Render(p_Ctx);
-	
-		for(i=0;i<iC;i++){
-			if(toRender[i].PostRender){
-				toRender[i].PostRender(p_Ctx);
-			}
-		}
 
-		
-		p_Ctx.globalAlpha=tod;
-			p_Ctx.drawImage(xThis.m_MaskCanvas,0,0);
-		p_Ctx.globalAlpha=1;
-		
-		//console.log(tilesRendered);
-		
 	}
 	this.Unload=function(){
 		for(var idx in xThis.m_Chunks){

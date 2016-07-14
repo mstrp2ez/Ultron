@@ -37,12 +37,7 @@ var NatureSimulator=function(p_Chunk,p_BiomeProperties,p_TileManager){
 					if(tile!==undefined&&tile.m_Index.X()==0){
 						tile.SetEntity(xThis.NewPlant(xThis.m_BiomeProperties.plants[Math.floor(Math.random()*4)],xThis.m_PlantAtlas,col,row,p_Area,p_TileSize));
 					}
-				}/* else if(shade>140){
-					var tile=xThis.m_TileManager.TileAt(col,row);
-					if(tile!==undefined&&tile.m_Index.X()==0){
-						xThis.NewPlant(xThis.m_BiomeProperties.plants[1],xThis.m_PlantAtlas,col,row,p_Area,p_TileSize);
-					}
-				} */
+				}
 
 				row=((i+1)%((w/p_TileSize))==0&&i!=0)?row+1:row;
 				col=((i+1)%((h/p_TileSize))==0&&i!=0)?0:col+1;

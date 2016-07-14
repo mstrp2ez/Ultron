@@ -35,27 +35,7 @@ var Game=function(p_Ctx){
 			cs.Update(p_Delta);
 			cs.Render(xThis.m_Ctx);
 		} 
-		
-		/* var col=0,row=0;
-		var w=100;
-		var h=100;
-		var i,iC=w*h;
-		var seed=Math.random();
-		perlin=new PerlinNoise();
-		for(i=0;i<iC;i++){
-			
-			var a=col/w;
-			var b=row/h;
-			var shade=Math.round(perlin.noise(a,b,0.8)*255);
-			
-			xThis.m_Ctx.fillStyle='rgb('+shade+','+shade+','+shade+')';
-			xThis.m_Ctx.fillRect(col*10,row*10,10,10);
-			
-			row=((i+1)%w==0&&i!=0)?row+1:row;
-			col=((i+1)%h==0&&i!=0)?0:col+1;
-		} */
-		
-		
+
 		window.requestAnimationFrame(xThis.Run);
 	}
 	

@@ -1,4 +1,5 @@
 var BaseWidget=function(p_Name,p_Properties){
+	Renderable.call(this,2);
 	this.m_Name=p_Name;
 	this.m_Properties=p_Properties;
 	this.m_Children=[];
@@ -55,6 +56,14 @@ var BaseWidget=function(p_Name,p_Properties){
 			}
 		}
 	}
+	this.HasEventListener=function(p_Event){
+		if(xThis.m_EventHandlers[p_Event]!==undefined){return true;}
+		var i,iC=xThis.m_Children.length;
+		for(i=0;i<iC;i++){
+			if(xThis.m_Children[i].HasEventListener(p_Event)){return true;}
+		}
+		return false;
+	}
 	this.Toggle=function(){
 		xThis.m_Visible=!xThis.m_Visible;
 	}
@@ -80,32 +89,45 @@ var BaseWidget=function(p_Name,p_Properties){
 			xThis.m_Children[i].Recalculate(p_ctx);
 		}
 	}
-	this.MouseHitTest=function(e){
+	this.onImageLoad=function(){
+		xThis.m_ImgLoaded=true;
+	}
+}
+BaseWidget.prototype=Object.create(Renderable.prototype);
+BaseWidget.prototype.constructor=BaseWidget;
+
+BaseWidget.prototype.MouseHitTest=function(e){
 		var x=e.offsetX;
 		var y=e.offsetY;
 		var widget=null;
-		if(xThis.m_Visible){
-			if(x>=xThis.m_x&&x<=xThis.m_x+xThis.m_w){
-				if(y>=xThis.m_y&&y<=xThis.m_y+xThis.m_h){
-					var i,iC=xThis.m_Children.length;
+		if(this.m_Visible){
+			if(x>=this.m_x&&x<=this.m_x+this.m_w){
+				if(y>=this.m_y&&y<=this.m_y+this.m_h){
+					var i,iC=this.m_Children.length;
 					for(i=iC;i--;){
-						widget=xThis.m_Children[i].MouseHitTest(e);
+						widget=this.m_Children[i].MouseHitTest(e);
 					}
 					if(widget==null){
-						widget=xThis;
+						widget=this;
 					}
 				}
 			}
 		}
 		return widget;
 	}
-	this.onImageLoad=function(){
-		xThis.m_ImgLoaded=true;
+BaseWidget.prototype.IsVisible=function(){
+	if(this.m_Visible){
+		if(this.m_Parent!==0){
+			return this.m_Parent.IsVisible();
+		}else{
+			return true;
+		}
 	}
+	return false;
 }
 BaseWidget.prototype.Render=function(p_ctx,p_shallow){
 	if(!this.m_ImgLoaded){return;}
-	if(!this.m_Visible){return;}
+	if(!this.IsVisible()){return;}
 	if(this.m_Img){
 		p_ctx.drawImage(this.m_Img,this.m_x,this.m_y);
 	}else if(this.m_bgcolor){
@@ -214,6 +236,8 @@ BaseWidget.prototype.ParseProperties=function(p_context){
 	this.m_TextShadowX=(p.hasOwnProperty("textshadowx"))?p.textshadowx:0;
 	this.m_TextShadowY=(p.hasOwnProperty("textshadowy"))?p.textshadowy:0;
 }
+
+
 window.BaseWidget=BaseWidget;
 
 var GridWidget=function(p_Name,p_Properties){
@@ -234,6 +258,7 @@ var GridWidget=function(p_Name,p_Properties){
 		var i,iC=numCols*numRows;
 		for(i=0;i<iC;i++){
 			var newCell=new GridCell(new Vec2d(xThis.m_x+(col*size),xThis.m_y+(row*size)),size);
+			newCell.m_Parent=xThis;
 			xThis.m_Children.push(newCell);
 			
 			row=((i+1)%(numCols)==0&&i!=0)?row+1:row;
@@ -270,9 +295,16 @@ var GridCell=function(p_Pos,p_Size){
 	BaseWidget.call(this,'GridCell',{});
 	this.m_Pos=p_Pos;
 	this.m_Size=p_Size;
+	this.m_x=this.m_Pos.m_fX;
+	this.m_y=this.m_Pos.m_fY;
+	this.m_h=p_Size;
+	this.m_w=p_Size;
 	this.m_Item=null;
 	this.m_Quantity=0;
 	this.m_MaxStackSize=64;
+	this.m_Selected=false;
+	
+	
 	
 	var xThis=this;
 	this.HasItem=function(){
@@ -280,6 +312,9 @@ var GridCell=function(p_Pos,p_Size){
 	}
 	this.Item=function(){
 		return xThis.m_Item;
+	}
+	this.onClick=function(p_Event){
+		xThis.Toggle();
 	}
 	this.HasMaxStack=function(){
 		return xThis.m_Quantity>=xThis.m_MaxStackSize;
@@ -301,8 +336,15 @@ var GridCell=function(p_Pos,p_Size){
 			xThis.m_Item=null;
 		}
 	}
+	this.ToggleSelection=function(){
+		xThis.m_Selected=!xThis.m_Selected;
+	}
+	this.Select=function(p_Select){
+		xThis.m_Selected=(p_Select)?true:false;
+	}
 	this.Render=function(p_Ctx){
-		p_Ctx.fillStyle='#333';
+		if(!xThis.IsVisible()){return;}
+		p_Ctx.fillStyle=xThis.m_Selected?'#a90':'#333';
 		p_Ctx.strokeStyle='#ccc';
 		p_Ctx.lineWidth=2;
 		
@@ -326,6 +368,7 @@ var GridCell=function(p_Pos,p_Size){
 		
 		p_Ctx.stroke();
 	}
+	this.RegisterEventListener('click',this.onClick);
 }
 GridCell.prototype=Object.create(GridWidget.prototype);
 GridCell.prototype.constructor=GridCell;
@@ -341,7 +384,7 @@ var UI=function(){
 		var i, iC=xThis.m_Widgets.length;
 		for(i=0;i<iC;i++){
 			var widget=xThis.m_Widgets[i];
-			if(widget&&widget.m_EventHandlers['click']!==undefined){
+			if(widget&&widget.HasEventListener('click')!==undefined){
 				if(widget.MouseHitTest(event)){
 					if(window[widget.m_EventHandlers['click']]){
 						window[widget.m_EventHandlers['click']](event,widget,xThis);
@@ -349,6 +392,8 @@ var UI=function(){
 				}
 			}
 		}
+		/* event.preventDefault(); */
+		return false;
 	}
 	Mouse.RegisterEventListener('click',this.OnClick);
 	

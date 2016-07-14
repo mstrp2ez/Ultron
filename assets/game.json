@@ -79,7 +79,7 @@
 		"chunkproperties":{
 			"size":400,
 			"atlas":["assets/tileatlas.png"],
-			"debug":false,
+			"debug":true,
 			"tile":{
 				"size":16,
 				"atlasHeight":48
@@ -98,86 +98,6 @@
 					"w": 800,
 					"h": 75,
 					"bgcolor": "#444"
-				},
-				"cw":{
-					"BuildButton":{
-						"p":{
-							"x":40,
-							"y":0,
-							"w":100,
-							"h":20,
-							"text":"Inventory"
-						},
-						"events":{
-							"click":"onInventoryBtnClick"
-						}
-					}
-				}
-			},
-			"PlayerInventory": {
-				"p":{
-					"x": "center",
-					"y": "center",
-					"w": 400,
-					"h": 145,
-					"bgcolor": "#777",
-					"visible":false
-				},
-				"cw":{
-					"InventoryCaption":{
-						"p": {
-							"x": 15,
-							"y": 15,
-							"w": 380,
-							"h": 20,
-							"text":"Inventory",
-							"textshadow":"#000",
-							"textshadowx":1,
-							"textshadowy":1
-						}
-					},
-					"InventoryGrid":{
-						"type":"GridWidget",
-						"p": {
-							"x": 15,
-							"y": 30,
-							"w": 200,
-							"h": 96,
-							"gridsize":32
-						}
-					},
-					"CraftingCaption":{
-						"p": {
-							"x": 230,
-							"y": 15,
-							"w": 380,
-							"h": 20,
-							"text":"Crafting",
-							"textshadow":"#000",
-							"textshadowx":1,
-							"textshadowy":1
-						}
-					},
-					"CraftingGrid":{
-						"type":"GridWidget",
-						"p":{
-							"x": 230,
-							"y": 30,
-							"w": 96,
-							"h": 96,
-							"gridsize":32
-						}
-					},
-					"CraftingResult":{
-						"type":"GridWidget",
-						"p":{
-							"x": 336,
-							"y": 62,
-							"w": 32,
-							"h": 32,
-							"gridsize":32
-						}
-					}
 				}
 			}
 		}
