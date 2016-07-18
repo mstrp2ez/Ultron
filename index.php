@@ -6,8 +6,7 @@ body{
 	width:100%;
 }
 .canvas-container{
-	margin:0 auto;
-	width:45%;
+	
 }
 #mask{
 	display:none;

@@ -146,7 +146,7 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		xThis.m_Tiles[p_Tile.Hash()/* .ToKey() */]=p_Tile;
 	}
 	this.TileAt=function(p_Col,p_Row){
-		//var hash=new HashIndex(p_Col,p_Row);
+		if(xThis.m_Tiles[p_Col+'x'+p_Row]===undefined){return;}
 		return xThis.m_Tiles[p_Col+'x'+p_Row];
 	}
 	this.TileAtPos=function(p_Pos){
@@ -160,6 +160,13 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 	}
 	this.SetNeighbors=function(p_Neighbors){
 		xThis.m_Neighbors=p_Neighbors;
+	}
+	this.GetNeighbors=function(p_Tile){
+		var hash=p_Tile.Hash();
+		return [xThis.TileAt(hash.X()-1,hash.Y()-1),
+				xThis.TileAt(hash.X()-1,hash.Y()+1),
+				xThis.TileAt(hash.X()+1,hash.Y()-1),
+				xThis.TileAt(hash.X()+1,hash.Y()+1)];
 	}
 	this.Fill=function(){
 		var col=0,row=0;
@@ -353,7 +360,13 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		return numRender;
 	}
 }
-
+var Route=function(){
+	this.m_Tiles=[];
+	
+	this.CalculateRoute=function(p_TileManager){
+		
+	}
+}
 
 var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 	Renderable.call(this,0);
@@ -397,9 +410,27 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		var size=xThis.ChunkSize();
 		var o=Camera.Offset();
 		var dim=Camera.Dimensions();
-		if((wc.m_fX+o.m_fX>0&&wc.m_fX+o.m_fX<dim.m_fX)||(wc.m_fX+size+o.m_fX>0&&wc.m_fX+size+o.m_fX<dim.m_fX)){
-			if((wc.m_fY+o.m_fY>0&&wc.m_fY+o.m_fY<dim.m_fY)||(wc.m_fY+size+o.m_fY>0&&wc.m_fY+size+o.m_fY<dim.m_fY)){
-				return true;
+		
+		//contains if the entire viewport fits within chunk
+		var points=[
+			new Vec2d(o.m_fX,o.m_fY),
+			new Vec2d(o.m_fX+dim.m_fX,o.m_fY),
+			new Vec2d(o.m_fX+dim.m_fX,o.m_fY+dim.m_fY),
+			new Vec2d(o.m_fX,o.m_fY+dim.m_fY),
+		]
+		var i,iC=points.length;
+		var within=true;
+		for(i=0;i<iC;i++){
+			if(!xThis.ContainsPoint(points[i])){within=false;break;}
+		}
+		if(within){
+			return true;
+		}else{
+		//contained
+			if((wc.m_fX+o.m_fX>=0&&wc.m_fX+o.m_fX<=dim.m_fX)||(wc.m_fX+size+o.m_fX>=0&&wc.m_fX+size+o.m_fX<=dim.m_fX)){
+				if((wc.m_fY+o.m_fY>=0&&wc.m_fY+o.m_fY<=dim.m_fY)||(wc.m_fY+size+o.m_fY>=0&&wc.m_fY+size+o.m_fY<=dim.m_fY)){
+					return true;
+				}
 			}
 		}
 		return false;
@@ -408,7 +439,7 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		var wc=xThis.WorldCoordinates();
 		var size=xThis.ChunkSize();
 		var o=Camera.Offset();
-		var dim=Camera.Dimensions();
+		/* var dim=Camera.Dimensions(); */
 		wc.AddV(o);
 		
 		var px=p_Point.m_fX;
@@ -417,8 +448,8 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		var py=p_Point.m_fY;
 		var y0=wc.m_fY;
 		var y1=wc.m_fY+size;
-		if(x0-px<0&&x1-px>=0){
-			if(y0-py<0&&y1-py>=0){
+		if(x0-px<=0&&x1-px>=0){
+			if(y0-py<=0&&y1-py>=0){
 				return true;
 			}
 		}
@@ -495,8 +526,6 @@ var World=function(){
 	this.m_SpawnChunk=null;
 	this.m_ChunkProperties={size:64,tile:{size:16}};
 	this.m_Entities=[];
-	this.m_Worker=new Worker(new Vec2d(100,10),this);
-	this.m_Worker.Init('assets/workeranim.json');
 	
 	var xThis=this;
 	this.Init=function(p_Manifest,p_Ctx,p_Scene){
@@ -508,10 +537,13 @@ var World=function(){
 			xThis.m_ChunkProperties.biome=p_Data;
 			var atlasCache=new Image();
 			atlasCache.onload=function(){
+				
 				xThis.m_ChunkProperties.biome.atlas=atlasCache;
 				xThis.NewChunk(new HashIndex(0,0));
 				
+				Entities.NewEntity('Worker',{px:100,py:100,anim:'assets/workeranim.json'});
 				
+				document.dispatchEvent(new CustomEvent('worldInitEnd',{'detail':{world:this}}));
 			}
 			atlasCache.src=xThis.m_ChunkProperties.atlas[0];
 		}); 
@@ -578,7 +610,7 @@ var World=function(){
 				xThis.m_ViewportChunks.push(chunk);
 			}
 		}
-		xThis.m_Worker.Update(0);
+		Entities.Update(p_Delta);
 	}
 	this.Render=function(p_Ctx){
 

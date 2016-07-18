@@ -17,11 +17,14 @@ var Game=function(p_Ctx){
 			}
 		});
 	});
-	
+	this.CurrentScene=function(){
+		return xThis.m_CurrentScene;
+	}
 	this.ChangeScene=function(p_SceneID){
 		var id=p_SceneID<0||p_SceneID>=xThis.m_Scenes.length?0:p_SceneID;
 		var newSceneObj=xThis.m_Scenes[id];
 		xThis.m_CurrentScene.Unload();
+		Renderer.Clear();
 		newSceneObj.scene.Init(newSceneObj.properties,xThis.m_Ctx,xThis);
 		xThis.m_CurrentScene=newSceneObj.scene;
 	}
@@ -41,3 +44,20 @@ var Game=function(p_Ctx){
 	
 	this.Run();
 }
+
+this.GameState=function(){
+	this.m_State=[];
+	
+	var xThis=this;
+	this.Get=function(p_State){
+		if(xThis.m_State[p_State]===undefined){return false;}
+		return xThis.m_State[p_State];
+	}
+	this.Set=function(p_State,p_Val){
+		xThis.m_State[p_State]=p_Val;
+	}
+	this.Is=function(p_State){
+		return (this.Get(p_State)!==false);
+	}
+}
+window.GameState=new GameState();

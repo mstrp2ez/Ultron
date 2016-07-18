@@ -3,7 +3,6 @@ var Scene=function(){
 	this.m_Systems=[];
 	this.m_Game=null;
 	this.m_Ctx=false;
-	this.m_Renderer=new Renderer();
 	
 	var xThis=this;
 	this.Init=function(p_Manifest,p_Context,p_Game){
@@ -42,16 +41,7 @@ var Scene=function(){
 		}
 	}
 	this.Render=function(p_Ctx){
-		/* var iC=xThis.m_Systems.length;
-		for(var i=0;i<iC;i++){
-			if(xThis.m_Systems[i]==undefined){continue;}
-			var o=xThis.m_Systems[i].s;
-			if(o.Render!==undefined){
-				var items=o.Render();
-				
-			}
-		} */
-		xThis.m_Renderer.Render(p_Ctx);
+		Renderer.Render(p_Ctx);
 	}
 	this.ParseProperties=function(p_Properties){
 		$.each(p_Properties,function(key,val){

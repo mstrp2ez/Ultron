@@ -1,15 +1,4 @@
-var Renderable=function(p_Layer){
-	this.m_Layer=(p_Layer===undefined)?0:p_Layer;
-	
-	var xThis=this;	
-	document.dispatchEvent(new CustomEvent('onAddRenderable',{'detail':this}));
-}
-Renderable.prototype.RenderLayer=function(){
-	return this.m_Layer;
-}
-Renderable.SetRenderLayer=function(p_Layer){
-	xThis.m_Layer=p_Layer;
-}
+
 
 var Renderer=function(){
 	this.BACKGROUND_LAYER=0;
@@ -18,23 +7,23 @@ var Renderer=function(){
 	this.m_RenderLayers=[[],[],[]];
 	
 	var xThis=this;
-	this.AddRenderable=function(p_Event){
-		var o=p_Event.detail;
+	this.AddRenderable=function(p_Item){
+		var o=p_Item;
 		if(xThis.m_RenderLayers[o.RenderLayer()]){
 			xThis.m_RenderLayers[o.RenderLayer()].push(o);
 		}
 	}
-	this.RemoveRenderable=function(p_Event){
-		var o=p_Event.detail;
+	this.RemoveRenderable=function(p_Item){
+		var o=p_Item;
 		if(xThis.m_RenderLayers[o.RenderLayer()]){
 			var layer=this.m_RenderLayers[o.RenderLayer()];
 			layer.splice(layer.indexOf(o),1);
 		}
 	}
-	this.SetRenderLayer=function(p_Event){
-		var o=p_Event.detail.o;
+	this.SetRenderLayer=function(p_Item,p_NewLayer){
+		var o=p_Item;
 		var rl=o.RenderLayer();
-		var nl=p_Event.detail.l;
+		var nl=p_NewLayer;
 		if(rl<0||rl>=xThis.m_RenderLayers.length){return;}
 		if(nl<0||nl>=xThis.m_RenderLayers.length){return;}
 		var oldLayer=xThis.m_RenderLayers[rl];
@@ -54,7 +43,25 @@ var Renderer=function(){
 			}
 		}
 	}
-	document.addEventListener('onAddRenderable',this.AddRenderable);
-	document.addEventListener('onRemoveRenderable',this.RemoveRenderable);
-	document.addEventListener('onSetRenderLayer',this.SetRenderLayer);
+	this.Clear=function(){
+		xThis.m_RenderLayers=[[],[],[]];
+	}
+}
+
+window.Renderer=new Renderer();
+
+var Renderable=function(p_Layer){
+	this.m_Layer=(p_Layer===undefined)?0:p_Layer;
+	
+	var xThis=this;	
+	Renderer.AddRenderable(this);
+}
+Renderable.prototype.Unload=function(){
+	Renderer.RemoveRenderable(this);
+}
+Renderable.prototype.RenderLayer=function(){
+	return this.m_Layer;
+}
+Renderable.prototype.SetRenderLayer=function(p_Layer){
+	xThis.m_Layer=p_Layer;
 }

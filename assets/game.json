@@ -91,13 +91,64 @@
 			"behaviourasset":"js/events/game-ui-events.js"
 		},
 		"elements":{
-			"TestBox": {
+			"InitMessagePanel":{
+				"p":{
+					"x":"center",
+					"y":"center",
+					"w":100,
+					"h":30,
+					"textcolor":"#fff",
+					"text":"Caching tilemap..."
+				},
+				"events":{
+					"worldInitEnd":"removeInitMessage"
+				}
+			},
+			"ControlPanel": {
 				"p": {
 					"x": "center",
 					"y": "bottom",
 					"w": 800,
-					"h": 75,
+					"h": 80,
 					"bgcolor": "#444"
+				},
+				"cw":{
+					"WorkerUIElement":{
+						"p":{
+							"x":0,
+							"y":0,
+							"w":300,
+							"h":80,
+							"bgcolor":"#222",
+							"visible":false
+						},
+						"cw":{
+							"MoveButton":{
+								"p":{
+									"x":0,
+									"y":0,
+									"w":40,
+									"h":40,
+									"imgsrc":"assets/ui/workmoveico.png"
+								},
+								"events":{
+									"click":"onWorkerBtnClick"
+								}
+							},
+							"BuildButton":{
+								"p":{
+									"x":40,
+									"y":0,
+									"w":40,
+									"h":40,
+									"imgsrc":"assets/ui/workbuildico.png"
+								},
+								"events":{
+									"click":"onWorkerBtnClick"
+								}
+							}
+						}
+					}
 				}
 			}
 		}

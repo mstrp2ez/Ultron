@@ -1,20 +1,81 @@
 "use strict";
-var Entity=function(p_World,p_Pos,p_Layer){
+var Entities=function(){
+	this.m_Entities=[];
+	
+	var xThis=this;
+	this.NewEntity=function(p_Type,p_Properties){
+		var constr=window[p_Type+'Parser'];
+		if(constr!==undefined){
+			constr=new constr();
+			constr.Parse(p_Properties);
+		}
+	}
+	this.AddEntity=function(p_Entity){
+		if(!p_Entity){return;}
+		if(xThis.m_Entities.indexOf(p_Entity)!=-1){return;}
+		
+		xThis.m_Entities.push(p_Entity);
+	}
+	this.RemoveEntity=function(p_Entity){
+		var idx=xThis.m_Entities.indexOf(p_Entity);
+		if(idx==-1){return;}
+		
+		xThis.m_Entities.splice(idx,1);
+	}
+	this.GetEntitiesOfType=function(p_Type){
+		var ret=[];
+		var i,iC=xThis.m_Entities.length;
+		for(i=0;i<iC;i++){
+			var e=xThis.m_Entities[i];
+			if(e&&e.Type()==p_Type){
+				ret.push(e);
+			}
+		}
+		return ret;
+	}
+	this.GetEntitiesOfTypeWithProperty=function(p_Type,p_Key,p_Val){
+		var ret=[];
+		var i,iC=xThis.m_Entities.length;
+		for(i=0;i<iC;i++){
+			var e=xThis.m_Entities[i];
+			if(e&&e.Type()==p_Type&&e[p_Key]!==undefined&&e[p_Key]===p_Val){
+				ret.push(e);
+			}
+		}
+		return ret;
+	}
+	this.Update=function(p_Delta){
+		var i,iC=xThis.m_Entities.length;
+		for(i=0;i<iC;i++){
+			var e=xThis.m_Entities[i];
+			if(e.Update){e.Update(p_Delta);}
+		}
+	}
+	this.onEntityEvent=function(){
+		
+	}
+	document.addEventListener('onEntityEvent',this.onEntityEvent);
+}
+window.Entities=new Entities();
+
+var Entity=function(p_Pos,p_Layer){
 	Renderable.call(this,p_Layer);
 	this.m_Pos=p_Pos;
 	this.m_Width=0;
 	this.m_Height=0;
-	this.m_World=p_World;
+	this.m_Type="Default";
+	
+	Entities.AddEntity(this);
 }
 Entity.prototype=Object.create(Renderable.prototype);
 Entity.prototype.constructor=Entity; 
 
+Entity.prototype.Type=function(){
+	return this.m_Type;
+}
 Entity.prototype.Update=function(p_Delta){
-	var chunk=this.m_World.ChunkAt(this.m_Pos);
 	
 }
-
-
 var Plant=function(p_PlantProperty,p_Atlas,p_Col,p_Row,p_ChunkArea,p_TileSize){
 	Renderable.call(this,1); 
 	
@@ -90,12 +151,21 @@ var Plant=function(p_PlantProperty,p_Atlas,p_Col,p_Row,p_ChunkArea,p_TileSize){
 Plant.prototype=Object.create(Renderable.prototype);
 Plant.prototype.constructor=Plant; 
 
-var Worker=function(p_Pos,p_World){
-	Entity.call(this,p_World,p_Pos,1);
+
+var Worker=function(p_Pos){
+	Entity.call(this,p_Pos,1);
 	this.m_Selected=false;
 	this.m_Animation=new Animation();
 	this.m_Animation.SetPosition(p_Pos);
 	this.m_Ready=false;
+	this.m_Type='Worker';
+	this.m_UIControl=false;
+	
+	this.WorkerState={
+		WORKER_NONE:0,
+		WORKER_MOVE:1,
+		WORKER_BUILD:2
+	}
 	
 	var xThis=this;
 	this.Init=function(p_AnimSrc){
@@ -141,11 +211,37 @@ var Worker=function(p_Pos,p_World){
 		var y=xThis.m_Pos.m_fY;
 		var w=xThis.m_Width;
 		var h=xThis.m_Height;
+		var ui=Game.CurrentScene().GetSystemByName('UI').s;
+		var control=ui.GetWidgetFromName('ControlPanel');
 		
 		if(mx>=x&&mx<=x+w){
 			if(my>=y&&my<=y+h){
 				xThis.m_Selected=!xThis.m_Selected;
+				if(xThis.m_Selected){
+					if(control){
+						control.HideChildren();
+						var el=control.GetChildWidgetByName(xThis.m_Type+'UIElement');
+						if(el){
+							el.Toggle();
+						}
+					}
+				}
 				return false;
+			}
+		}
+		//Entity was not clicked at
+		var state=GameState.Get('WorkerState');
+		if(!state||state.s===xThis.WorkerState.WORKER_NONE){
+			xThis.m_Selected=false;
+			if(control){
+				control.HideChildren();
+			}
+		}else{
+			if(state&&state.e===xThis){
+				if(state.s===xThis.WorkerState.WORKER_MOVE){
+					GameState.Set('WorkerState',{s:xThis.WorkerState.WORKER_NONE,e:this});
+					var route=new Route();
+				}
 			}
 		}
 	}
@@ -153,3 +249,16 @@ var Worker=function(p_Pos,p_World){
 }
 Worker.prototype=Object.create(Entity.prototype);
 Worker.prototype.constructor=Worker;
+
+var WorkerParser=function(){
+	this.Parse=function(p_Data){
+		var p=new Vec2d(p_Data.px,p_Data.py);
+		var animSrc=p_Data.anim;
+		
+		var w=new Worker(p);
+		w.Init(animSrc);
+	}
+}
+
+
+

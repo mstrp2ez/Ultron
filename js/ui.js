@@ -1,5 +1,6 @@
-var BaseWidget=function(p_Name,p_Properties){
+var BaseWidget=function(p_Name,p_Properties,p_UI){
 	Renderable.call(this,2);
+	this.m_UI=p_UI;
 	this.m_Name=p_Name;
 	this.m_Properties=p_Properties;
 	this.m_Children=[];
@@ -67,20 +68,39 @@ var BaseWidget=function(p_Name,p_Properties){
 	this.Toggle=function(){
 		xThis.m_Visible=!xThis.m_Visible;
 	}
+	this.Hide=function(){
+		xThis.m_Visible=false;
+	}
+	this.HideChildren=function(){
+		var i,iC=xThis.m_Children.length;
+		for(i=0;i<iC;i++){
+			xThis.m_Children[i].Hide();
+		}
+	}
 	this.Type=function(){
 		return xThis.m_Type;
 	}
 	this.SetCustomData=function(p_Data){
 		xThis.m_CustomData=p_Data;
 	}
-	this.RegisterEventListener=function(p_event,p_handler){
+	this.RegisterEventListener=function(p_event,p_handler,p_custom){
+		if(p_custom){
+			if(window[p_handler]!==undefined){
+				document.addEventListener(p_event,function(event){
+					window[p_handler](event,xThis,xThis.m_UI);
+				},false);
+			}
+		}
 		xThis.m_EventHandlers[p_event]=p_handler;
-	}
-	this.Unload=function(){
-		
 	}
 	this.AddChild=function(p_Child){
 		xThis.m_Children.push(p_Child);
+	}
+	this.RemoveChild=function(p_Child){
+		var idx=xThis.m_Children.indexOf(p_Child);
+		if(idx!==-1){
+			xThis.m_Children.splice(idx,1);
+		}
 	}
 	this.Recalculate=function(p_ctx){
 		xThis.ParseProperties(p_ctx);
@@ -96,6 +116,25 @@ var BaseWidget=function(p_Name,p_Properties){
 BaseWidget.prototype=Object.create(Renderable.prototype);
 BaseWidget.prototype.constructor=BaseWidget;
 
+BaseWidget.prototype.Unload=function(){
+	if(this.m_Parent){
+		this.m_Parent.RemoveChild(this);
+	}
+	for(var idx in this.m_EventHandlers){
+		document.removeEventListener(idx,this.m_EventHandlers[idx]);
+	}
+	Renderable.prototype.Unload.call(this);
+}
+BaseWidget.prototype.GetChildWidgetByName=function(p_Name){
+	var children=this.m_Children;
+	var i,iC=children.length;
+	for(i=0;i<iC;i++){
+		if(children[i]&&children[i].m_Name==p_Name){
+			return children[i];
+		}
+	}
+	return false;
+}
 BaseWidget.prototype.MouseHitTest=function(e){
 		var x=e.offsetX;
 		var y=e.offsetY;
@@ -134,12 +173,6 @@ BaseWidget.prototype.Render=function(p_ctx,p_shallow){
 		p_ctx.fillStyle=this.m_bgcolor;
 		p_ctx.fillRect(this.m_x,this.m_y,this.m_w,this.m_h);
 	}
-	if(p_shallow===undefined){
-		var i,iC=this.m_Children.length;
-		for(i=0;i<iC;i++){
-			this.m_Children[i].Render(p_ctx);
-		}
-	}
 	if(this.m_Text){
 		p_ctx.fillStyle=this.m_TextColor;
 		p_ctx.font=this.m_Font;
@@ -154,12 +187,12 @@ BaseWidget.prototype.Render=function(p_ctx,p_shallow){
 		p_ctx.shadowOffsetX=0;
 		p_ctx.shadowOffsetY=0;
 	}
-	if(p_shallow===undefined){
-		var i,iC=this.m_Children.length;
-		for(i=0;i<iC;i++){
-			this.m_Children[i].Render(p_ctx);
-		}
-	}
+}
+BaseWidget.prototype.Name=function(){
+	return this.m_Name;
+}
+BaseWidget.prototype.Set=function(p_Key,p_Val){
+	this.m_Properties[p_Key]=p_Val;
 }
 BaseWidget.prototype.ParseProperties=function(p_context){
 	var p=this.m_Properties;
@@ -373,6 +406,29 @@ var GridCell=function(p_Pos,p_Size){
 GridCell.prototype=Object.create(GridWidget.prototype);
 GridCell.prototype.constructor=GridCell;
 
+var WorldOverlayImage=function(p_Properties){
+	Renderable.call(this,2);
+	this.m_Img=new Image();
+	this.m_Ready=false;
+	this.m_Pos=(p_Properties.pos!==undefined)?p_Properties.pos:new Vec2d(0,0);
+	
+	var xThis=this;
+	this.m_Img.onload=function(){
+		xThis.m_Ready=true;
+	}
+	this.m_Img.src=p_Properties.src;
+	
+	this.Render=function(p_Ctx){
+		if(!xThis.m_Ready){return;}
+		var x=xThis.m_Pos.m_fX+Camera.Offset().m_fX;
+		var y=xThis.m_Pos.m_fY+Camera.Offset().m_fY;
+		p_Ctx.drawImage(xThis.m_Img,x,y,xThis.m_Img.width,xThis.m_Img.height)
+	}
+}
+WorldOverlayImage.prototype=Object.create(Renderable.prototype);
+WorldOverlayImage.prototype.constructor=WorldOverlayImage;
+
+
 
 var UI=function(){
 	this.m_Widgets=[];
@@ -382,18 +438,20 @@ var UI=function(){
 
 	this.OnClick=function(event){
 		var i, iC=xThis.m_Widgets.length;
+		var hit=false;
 		for(i=0;i<iC;i++){
 			var widget=xThis.m_Widgets[i];
 			if(widget&&widget.HasEventListener('click')!==undefined){
 				if(widget.MouseHitTest(event)){
+					hit=true;
 					if(window[widget.m_EventHandlers['click']]){
 						window[widget.m_EventHandlers['click']](event,widget,xThis);
 					}
 				}
 			}
 		}
-		/* event.preventDefault(); */
-		return false;
+		
+		return !hit;
 	}
 	Mouse.RegisterEventListener('click',this.OnClick);
 	
@@ -422,7 +480,7 @@ var UI=function(){
 	this.Init=function(p_Data,p_Context,p_Scene){
 		xThis.m_Scene=p_Scene;
 		var canvas=p_Context.canvas;
-		var root=new BaseWidget("root", {x:0,y:0,w:canvas.width,h:canvas.height});
+		var root=new BaseWidget("root", {x:0,y:0,w:canvas.width,h:canvas.height},xThis);
 		root.ParseProperties();
 		xThis.m_Root=root;
 		var json=p_Data;
@@ -430,36 +488,39 @@ var UI=function(){
 		if(json.elements===undefined){
 			return;
 		}
-		var o;
-		for(o in json.elements){
-			var p={};
-			var obj=json.elements[o];
-			var type=(obj.type===undefined)?"BaseWidget":obj.type;
-			if(obj.hasOwnProperty('p')){
-				p=obj.p;
-			}
-			var nw=null;
-			nw=new window[type](o,p);//BaseWidget(o,p);
-			nw.ParseProperties(p_Context);
-			xThis.m_Root.m_Children.push(nw);
-			if(obj.hasOwnProperty('events')){
-				var inner;
-				for(inner in obj.events){
-					nw.RegisterEventListener(inner, obj.events[inner]);
-				}
-			}
-			if(obj.hasOwnProperty('cw')){
-				xThis.ParseChildren(obj.cw,nw,p_Context);
-			}
-			
-			xThis.m_Widgets.push(nw);
-		}
+		
 		if(json.hasOwnProperty('meta')){
 			if(json.meta.hasOwnProperty('behaviourasset')){
 				var src=json.meta.behaviourasset;
 				var domel=document.createElement('script');
 				document.body.appendChild(domel);
 				domel.onload=function(){
+					var o;
+					for(o in json.elements){
+						var p={};
+						var obj=json.elements[o];
+						var type=(obj.type===undefined)?"BaseWidget":obj.type;
+						if(obj.hasOwnProperty('p')){
+							p=obj.p;
+						}
+						var nw=null;
+						nw=new window[type](o,p,xThis);//BaseWidget(o,p);
+						nw.ParseProperties(p_Context);
+						xThis.m_Root.m_Children.push(nw);
+						if(obj.hasOwnProperty('events')){
+							var inner;
+							for(inner in obj.events){
+								var custom=!(inner=='click'||inner=='keypress')
+								nw.RegisterEventListener(inner, obj.events[inner],custom);
+							}
+						}
+						if(obj.hasOwnProperty('cw')){
+							xThis.ParseChildren(obj.cw,nw,p_Context);
+						}
+						
+						xThis.m_Widgets.push(nw);
+					}
+					
 					var i,iC=xThis.m_Widgets.length;
 					for(i=0;i<iC;i++){
 						if(xThis.m_Widgets[i].m_EventHandlers["postload"]!==undefined){
@@ -483,12 +544,13 @@ var UI=function(){
 				p=obj.p;
 			}
 			var type=(obj.type===undefined)?"BaseWidget":obj.type;
-			var nw=new window[type](o,p);
+			var nw=new window[type](o,p,xThis);
 			//nw=new BaseWidget(o,p);
 			if(obj.hasOwnProperty('events')){
 				var inner;
 				for(inner in obj.events){
-					nw.RegisterEventListener(inner, obj.events[inner]);
+					var custom=!(inner=='click'||inner=='keypress')
+					nw.RegisterEventListener(inner, obj.events[inner],custom);
 				}
 			}
 			
@@ -513,6 +575,13 @@ var UI=function(){
 			}
 		}
 		return null;
+	}
+	this.RemoveWidget=function(p_Widget){
+		var idx=xThis.m_Widgets.indexOf(p_Widget);
+		if(idx!==-1){
+			p_Widget.Unload();
+			xThis.m_Widgets.splice(idx,1);
+		}
 	}
 	this.Unload=function(){
 		var i, iC=xThis.m_Widgets.length;
