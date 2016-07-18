@@ -31,7 +31,10 @@ var Mouse=function(){
 		var i,iC=xThis.m_EventListeners.length;
 		for(i=0;i<iC;i++){
 			if(xThis.m_EventListeners[i].type=='click'){
-				xThis.m_EventListeners[i].callback(event);
+				if(xThis.m_EventListeners[i].callback(event)===false){
+					event.preventDefault();
+					return false;
+				}
 			}
 		}
 		

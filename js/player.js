@@ -1,4 +1,5 @@
 var Player=function(){
+	Renderable.call(this,1);
 	this.m_Animation=new Animation();
 	this.m_Pos=new Vec2d(0,0);
 	this.m_CurrentChunk=null;
@@ -167,3 +168,5 @@ var Player=function(){
 		
 	}
 }
+Player.prototype=Object.create(Renderable.prototype);
+Player.prototype.constructor=Player;

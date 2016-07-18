@@ -17,15 +17,16 @@ var Animation=function(p_Src){
 	
 	var xThis=this;
 	this.Load=function(p_Data,p_Callback){
-		xThis.m_SpriteSheet=new Image();
-		xThis.m_SpriteSheet.onload=function(){
-			
-			if(p_Callback!==undefined){p_Callback();}
-			xThis.m_Loaded=true;
-		}
-		xThis.m_SpriteSheet.src=p_Data.src;
 		xThis.m_AnimationRates=p_Data.rates;
 		xThis.m_Animations=p_Data.a;
+		
+		xThis.m_SpriteSheet=new Image();
+		xThis.m_SpriteSheet.onload=function(){
+			xThis.m_Loaded=true;
+			if(p_Callback!==undefined){p_Callback();}
+		}
+		xThis.m_SpriteSheet.src=p_Data.src;
+		
 	}
 	this.SetPosition=function(p_Pos){
 		xThis.m_x=p_Pos.m_fX;
@@ -62,7 +63,7 @@ var Animation=function(p_Src){
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].y,
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].w,
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].h,
-			xThis.m_x-(fw*0.5),
+			xThis.m_x,
 			xThis.m_y,
 			fw,
 			fh);
@@ -85,5 +86,5 @@ var Animation=function(p_Src){
 		}
 		xThis.m_currentFrame=0;
 	}
-	if(p_Src!==undefined&&p_Src.length>0){this.Load(p_Src);}
+	//if(p_Src!==undefined&&p_Src.length>0){this.Load(p_Src);}
 }

@@ -6,8 +6,7 @@ body{
 	width:100%;
 }
 .canvas-container{
-	margin:0 auto;
-	width:45%;
+	
 }
 #mask{
 	display:none;
@@ -26,8 +25,8 @@ body{
 <script src="js/keyboard.js"></script>
 <script src="js/camera.js"></script>
 <script src="js/animation.js"></script>
+<script src="js/renderer.js"></script>
 <script src="js/entities.js"></script>
-<script src="js/player.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/nature.js"></script>
 <script src="js/world.js"></script>

@@ -17,11 +17,14 @@ var Game=function(p_Ctx){
 			}
 		});
 	});
-	
+	this.CurrentScene=function(){
+		return xThis.m_CurrentScene;
+	}
 	this.ChangeScene=function(p_SceneID){
 		var id=p_SceneID<0||p_SceneID>=xThis.m_Scenes.length?0:p_SceneID;
 		var newSceneObj=xThis.m_Scenes[id];
 		xThis.m_CurrentScene.Unload();
+		Renderer.Clear();
 		newSceneObj.scene.Init(newSceneObj.properties,xThis.m_Ctx,xThis);
 		xThis.m_CurrentScene=newSceneObj.scene;
 	}
@@ -35,29 +38,26 @@ var Game=function(p_Ctx){
 			cs.Update(p_Delta);
 			cs.Render(xThis.m_Ctx);
 		} 
-		
-		/* var col=0,row=0;
-		var w=100;
-		var h=100;
-		var i,iC=w*h;
-		var seed=Math.random();
-		perlin=new PerlinNoise();
-		for(i=0;i<iC;i++){
-			
-			var a=col/w;
-			var b=row/h;
-			var shade=Math.round(perlin.noise(a,b,0.8)*255);
-			
-			xThis.m_Ctx.fillStyle='rgb('+shade+','+shade+','+shade+')';
-			xThis.m_Ctx.fillRect(col*10,row*10,10,10);
-			
-			row=((i+1)%w==0&&i!=0)?row+1:row;
-			col=((i+1)%h==0&&i!=0)?0:col+1;
-		} */
-		
-		
+
 		window.requestAnimationFrame(xThis.Run);
 	}
 	
 	this.Run();
 }
+
+this.GameState=function(){
+	this.m_State=[];
+	
+	var xThis=this;
+	this.Get=function(p_State){
+		if(xThis.m_State[p_State]===undefined){return false;}
+		return xThis.m_State[p_State];
+	}
+	this.Set=function(p_State,p_Val){
+		xThis.m_State[p_State]=p_Val;
+	}
+	this.Is=function(p_State){
+		return (this.Get(p_State)!==false);
+	}
+}
+window.GameState=new GameState();
