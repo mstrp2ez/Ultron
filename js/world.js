@@ -50,6 +50,7 @@ var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
 	this.m_Index=new HashIndex(0,0);
 	this.m_Debug=false;
 	this.m_Entity=null;
+	this.m_Origin=p_Origin;
 	
 	var xThis=this;
 	this.FillColor=function(p_FillColor){
@@ -63,6 +64,9 @@ var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
 	}
 	this.Entity=function(){
 		return xThis.m_Entity;
+	}
+	this.HashIndex=function(){
+		return xThis.m_Index;
 	}
 	this.Hash=function(){
 		return xThis.m_Col+'x'+xThis.m_Row;
@@ -99,6 +103,12 @@ var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
 				y,
 				size,size);
 		}
+	}
+	this.WorldCoords=function(){
+		var offset=Camera.Offset();
+		xp=xThis.m_Col*xThis.m_Size+p_Origin.m_fX+offset.m_fX;
+		yp=xThis.m_Row*xThis.m_Size+p_Origin.m_fY+offset.m_fY;
+		return new Vec2d(xp,yp);
 	}
 	this.SetDebug=function(p_Debug){
 		xThis.m_Debug=p_Debug;
@@ -146,10 +156,12 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		xThis.m_Tiles[p_Tile.Hash()/* .ToKey() */]=p_Tile;
 	}
 	this.TileAt=function(p_Col,p_Row){
-		if(xThis.m_Tiles[p_Col+'x'+p_Row]===undefined){return;}
+		if(xThis.m_Tiles[p_Col+'x'+p_Row]===undefined){return false;}
 		return xThis.m_Tiles[p_Col+'x'+p_Row];
 	}
 	this.TileAtPos=function(p_Pos){
+		var offset=Camera.Offset();
+		p_Pos.SubV(offset);
 		var x=p_Pos.m_fX;
 		var y=p_Pos.m_fY;
 		var size=xThis.m_TileProperties.size;
@@ -162,11 +174,11 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		xThis.m_Neighbors=p_Neighbors;
 	}
 	this.GetNeighbors=function(p_Tile){
-		var hash=p_Tile.Hash();
-		return [xThis.TileAt(hash.X()-1,hash.Y()-1),
-				xThis.TileAt(hash.X()-1,hash.Y()+1),
-				xThis.TileAt(hash.X()+1,hash.Y()-1),
-				xThis.TileAt(hash.X()+1,hash.Y()+1)];
+		var hash=new HashIndex(p_Tile.m_Col,p_Tile.m_Row);
+		return [xThis.TileAt(hash.X()-1,hash.Y()),
+				xThis.TileAt(hash.X()+1,hash.Y()),
+				xThis.TileAt(hash.X(),hash.Y()-1),
+				xThis.TileAt(hash.X(),hash.Y()+1)];
 	}
 	this.Fill=function(){
 		var col=0,row=0;
@@ -271,6 +283,7 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		}
 		var conv={'UP':'DOWN','RIGHT':'LEFT','DOWN':'UP','LEFT':'RIGHT'}; //then get the border tiles of both this chunk and the neighbours
 		var tileConv={'UP':1,'RIGHT':2,'DOWN':4,'LEFT':8};
+		var atlasMax=15;
 		for(var thisDir in conv){
 			var neighbourDir=conv[thisDir];
 			if(neighbourBorders[thisDir]!==undefined){
@@ -287,12 +300,12 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 					var ti1=thisTile.TileIndex();
 					if(ti0.X()===0||ti1.X()===0){continue;}
 					var u=ti0.X()+tileConv[neighbourDir];
-					u=u>15?15:u;
+					u=u>atlasMax?atlasMax:u;
 					ti0.Set(u,ti0.Y());
 					otherTM.m_Tiles[tileNeigbour.Hash()/* .ToKey() */]=tileNeigbour;
 					
 					u=ti1.X()+tileConv[thisDir];
-					u=u>15?15:u;
+					u=u>atlasMax?atlasMax:u;
 					ti1.Set(u,ti1.Y());
 					xThis.m_Tiles[thisTile.Hash()/* .ToKey() */]=thisTile;
 				}
@@ -363,8 +376,84 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 var Route=function(){
 	this.m_Tiles=[];
 	
-	this.CalculateRoute=function(p_TileManager){
+	this.CalculateRoute=function(p_Entity,p_End){
+		if(p_Entity===undefined||p_End===undefined){return [];}
+		var moveCost=14;
+		var chunk=p_Entity.World().ChunkAt(p_Entity.Pos());
+		var tileM=chunk.Tilemanager();
+		var startTile=tileM.TileAtPos(p_Entity.Pos());
+		var endTile=tileM.TileAtPos(p_End);
+		var endNode={t:endTile,f:0,p:false};
+		var startNode={t:startTile,f:0,p:false};
+		var open=[startNode];
+		var closed=[];
+		var found=false;
+		var calcG=function(p_Node){
+			if(p_Node.p){
+				var c=moveCost+calcG(p_Node.p);
+				return c;
+			}
+			return moveCost;
+		}
+		var calcF=function(p_Node){
+			var dx=Math.abs(p_Node.t.m_Col-endTile.m_Col);
+			var dy=Math.abs(p_Node.t.m_Row-endTile.m_Row);
+			var f=(dx+dy)+calcG(p_Node);
+			return f;
+		}
+		var containsNode=function(p_Arr,p_Node){
+			var i,iC=p_Arr.length;
+			for(i=0;i<iC;i++){
+				if(p_Arr[i].t==p_Node.t){
+					return p_Arr[i];
+				}
+			}
+			return false;
+		}
 		
+		startNode.f=calcF(startNode);
+		while(open.length){
+			var current=open.pop();
+			if(containsNode(closed,current)){
+				continue;
+			}
+			closed.push(current);
+			if(current.t===endTile){found=true;break;}
+			
+			var nb=tileM.GetNeighbors(current.t);
+			var i,iC=nb.length;
+			for(i=0;i<iC;i++){
+				if(nb[i]){
+					var newNode={t:nb[i],f:0,p:current};
+					newNode.f=calcF(newNode);
+					var existing=containsNode(open,newNode);
+					
+					if(existing===false){
+						open.push(newNode);
+					}else{
+						var og=calcG(existing);
+						var ng=calcG(newNode);
+						if(ng<og){
+							existing.p=current.p;
+							existing.f=calcF(existing);
+						}
+					}
+				}
+			}
+			
+			open.sort(function(a,b){
+				return b.f-a.f;
+			});
+		}
+		var ret=[];
+		if(found){
+			var c=closed.pop();
+			while(c){
+				ret.push(c);
+				c=c.p;
+			}
+		}
+		return ret;
 	}
 }
 
@@ -541,7 +630,7 @@ var World=function(){
 				xThis.m_ChunkProperties.biome.atlas=atlasCache;
 				xThis.NewChunk(new HashIndex(0,0));
 				
-				Entities.NewEntity('Worker',{px:100,py:100,anim:'assets/workeranim.json'});
+				Entities.NewEntity('Worker',{px:100,py:100,anim:'assets/workeranim.json',world:xThis});
 				
 				document.dispatchEvent(new CustomEvent('worldInitEnd',{'detail':{world:this}}));
 			}
@@ -560,9 +649,9 @@ var World=function(){
 			if(xThis.m_SpawnChunk===null){xThis.m_SpawnChunk=newChunk;}
 			xThis.m_Chunks[p_ChunkIndex.ToKey()]=newChunk;
 			
-			xThis.m_Chunks.sort(function(a,b){
+			/* xThis.m_Chunks.sort(function(a,b){
 				return a.ChunkIndex().Y()-b.ChunkIndex().Y();
-			});
+			}); */
 		}
 		
 		if(p_Shallow===undefined){ //Check neighbors

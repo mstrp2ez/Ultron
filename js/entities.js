@@ -58,9 +58,10 @@ var Entities=function(){
 }
 window.Entities=new Entities();
 
-var Entity=function(p_Pos,p_Layer){
+var Entity=function(p_Pos,p_World,p_Layer){
 	Renderable.call(this,p_Layer);
 	this.m_Pos=p_Pos;
+	this.m_World=p_World;
 	this.m_Width=0;
 	this.m_Height=0;
 	this.m_Type="Default";
@@ -70,6 +71,12 @@ var Entity=function(p_Pos,p_Layer){
 Entity.prototype=Object.create(Renderable.prototype);
 Entity.prototype.constructor=Entity; 
 
+Entity.prototype.Pos=function(){
+	return this.m_Pos;
+}
+Entity.prototype.World=function(){
+	return this.m_World;
+}
 Entity.prototype.Type=function(){
 	return this.m_Type;
 }
@@ -152,14 +159,18 @@ Plant.prototype=Object.create(Renderable.prototype);
 Plant.prototype.constructor=Plant; 
 
 
-var Worker=function(p_Pos){
-	Entity.call(this,p_Pos,1);
+var Worker=function(p_Pos,p_World){
+	Entity.call(this,p_Pos,p_World,1);
 	this.m_Selected=false;
+	/* this.m_World=p_World; */
 	this.m_Animation=new Animation();
 	this.m_Animation.SetPosition(p_Pos);
 	this.m_Ready=false;
 	this.m_Type='Worker';
 	this.m_UIControl=false;
+	this.m_MoveSpeed=0.5;
+	this.m_Path=[];
+	this.m_LerpPath=false;
 	
 	this.WorkerState={
 		WORKER_NONE:0,
@@ -178,16 +189,25 @@ var Worker=function(p_Pos){
 			});
 		});
 	}
+	this.MoveSpeed=function(){
+		return xThis.m_MoveSpeed;
+	}
 	this.Update=function(p_Delta){
 		Entity.prototype.Update.call(this,p_Delta);
 		xThis.m_Animation.Animate(p_Delta);
+		
+		if(xThis.m_LerpPath){
+			xThis.m_LerpPath.Update(p_Delta);
+		}
+		xThis.m_Animation.SetPosition(xThis.m_Pos);
 	}
 	this.Render=function(p_Ctx){
-		xThis.m_Animation.Render(p_Ctx);
+		var offset=Camera.Offset();
+		xThis.m_Animation.Render(p_Ctx,offset);
 		
 		if(xThis.m_Selected){
-			var x=xThis.m_Pos.m_fX;
-			var y=xThis.m_Pos.m_fY;
+			var x=xThis.m_Pos.m_fX+offset.m_fX;
+			var y=xThis.m_Pos.m_fY+offset.m_fY;
 			var w=xThis.m_Width;
 			var h=xThis.m_Height;
 			
@@ -205,10 +225,11 @@ var Worker=function(p_Pos){
 	}
 	this.onClick=function(p_Event){
 		if(!xThis.m_Ready){return true;}
+		var cameraOffset=Camera.Offset();
 		var mx=p_Event.offsetX;
 		var my=p_Event.offsetY;
-		var x=xThis.m_Pos.m_fX;
-		var y=xThis.m_Pos.m_fY;
+		var x=xThis.m_Pos.m_fX+cameraOffset.m_fX;
+		var y=xThis.m_Pos.m_fY+cameraOffset.m_fY;
 		var w=xThis.m_Width;
 		var h=xThis.m_Height;
 		var ui=Game.CurrentScene().GetSystemByName('UI').s;
@@ -241,6 +262,11 @@ var Worker=function(p_Pos){
 				if(state.s===xThis.WorkerState.WORKER_MOVE){
 					GameState.Set('WorkerState',{s:xThis.WorkerState.WORKER_NONE,e:this});
 					var route=new Route();
+					var worldCoord=Camera.ScreenSpaceToWorldSpace(mx,my);
+					xThis.m_Path=route.CalculateRoute(xThis,new Vec2d(worldCoord.x,worldCoord.y));
+					if(xThis.m_Path.length){
+						xThis.m_LerpPath=new TilePathLerp(xThis.m_Path,xThis);
+					}
 				}
 			}
 		}
@@ -254,8 +280,9 @@ var WorkerParser=function(){
 	this.Parse=function(p_Data){
 		var p=new Vec2d(p_Data.px,p_Data.py);
 		var animSrc=p_Data.anim;
+		var world=p_Data.world;
 		
-		var w=new Worker(p);
+		var w=new Worker(p,world);
 		w.Init(animSrc);
 	}
 }

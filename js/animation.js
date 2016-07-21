@@ -53,18 +53,22 @@ var Animation=function(p_Src){
 			xThis.m_TimeIncrement=0;
 		}
 	}
-	this.Render=function(){
+	this.Render=function(p_Ctx,p_Offset){
 		if(!xThis.m_Loaded){return;}
 		if(xThis.m_Animations.length<=0){return;}
+		var offset=p_Offset;
+		if(p_Offset===undefined){
+			offset=new Vec2d(0,0);
+		}
 		var fw=xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].w;
 		var fh=xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].h;
-		xThis.m_Ctx.drawImage(xThis.m_SpriteSheet,
+		p_Ctx.drawImage(xThis.m_SpriteSheet,
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].x,
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].y,
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].w,
 			xThis.m_Animations[xThis.m_currentAnim][xThis.m_currentFrame].h,
-			xThis.m_x,
-			xThis.m_y,
+			xThis.m_x+offset.m_fX,
+			xThis.m_y+offset.m_fY,
 			fw,
 			fh);
 	}

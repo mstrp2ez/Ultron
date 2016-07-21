@@ -5,7 +5,7 @@ var Camera=function(){
 	
 	var xThis=this;
 	this.Offset=function(){
-		return xThis.m_WorldOffset;
+		return xThis.m_WorldOffset.Copy();
 	}
 	this.Dimensions=function(){
 		return xThis.m_Dimensions;
@@ -21,10 +21,10 @@ var Camera=function(){
 		xThis.m_WorldOffset=p_Offset;
 	}
 	this.ScreenSpaceToWorldSpace=function(p_x,p_y){
-		return {x:p_x-xThis.m_WorldOffset.m_fX,y:p_y-xThis.m_WorldOffset.m_fY};
+		return {x:p_x+xThis.m_WorldOffset.m_fX,y:p_y+xThis.m_WorldOffset.m_fY};
 	}
 	Keyboard.RegisterEventListener('keydown',function(event){
-		/* if(event.which==37){
+		 if(event.which==37){
 			xThis.m_WorldOffset.m_fX+=3;
 		}
 		if(event.which==39){
@@ -35,7 +35,7 @@ var Camera=function(){
 		}
 		if(event.which==40){
 			xThis.m_WorldOffset.m_fY-=3;
-		} */
+		} 
 	});
 }
 window.Camera=new Camera();
