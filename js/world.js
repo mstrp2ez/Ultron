@@ -162,8 +162,11 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 	this.TileAtPos=function(p_Pos){
 		var offset=Camera.Offset();
 		p_Pos.SubV(offset);
-		var x=p_Pos.m_fX;
-		var y=p_Pos.m_fY;
+		var ox=xThis.m_Origin.m_fX;
+		var oy=xThis.m_Origin.m_fY;
+		
+		var x=p_Pos.m_fX-ox;
+		var y=p_Pos.m_fY-oy;
 		var size=xThis.m_TileProperties.size;
 		var col=Math.floor(x/size);
 		var row=Math.floor(y/size);
@@ -356,6 +359,23 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		}
 		return tiles;
 	}
+	this.GetBorderTileOnTileAxis=function(p_Tile,p_Direction){
+		var border=xThis.GetBorderTiles(p_Direction);
+		var i,iC=border.length;
+		
+		for(i=0;i<iC;i++){
+			if(p_Direction=='RIGHT'||p_Direction=='LEFT'){
+				if(border[i].m_Row==p_Tile.m_Row){
+					return border[i];
+				}
+			}else{
+				if(border[i].m_Col==p_Tile.m_Col){
+					return border[i];
+				}
+			}
+		}
+		return false;
+	}
 	this.Render=function(p_Ctx,p_InPlace){
 		var numRender=0;
 		var offset=Camera.Offset();
@@ -374,14 +394,11 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 	}
 }
 var Route=function(){
-	this.m_Tiles=[];
-	
-	this.CalculateRoute=function(p_Entity,p_End){
-		if(p_Entity===undefined||p_End===undefined){return [];}
+	var xThis=this;
+	this.Solve=function(p_Pos,p_End,p_Chunk){
+		var tileM=p_Chunk.Tilemanager();
 		var moveCost=14;
-		var chunk=p_Entity.World().ChunkAt(p_Entity.Pos());
-		var tileM=chunk.Tilemanager();
-		var startTile=tileM.TileAtPos(p_Entity.Pos());
+		var startTile=tileM.TileAtPos(p_Pos);
 		var endTile=tileM.TileAtPos(p_End);
 		var endNode={t:endTile,f:0,p:false};
 		var startNode={t:startTile,f:0,p:false};
@@ -454,6 +471,100 @@ var Route=function(){
 			}
 		}
 		return ret;
+	}
+	
+	this.CalculateRoute=function(p_Entity,p_End){
+		if(p_Entity===undefined||p_End===undefined){return [];}
+		var startChunk=p_Entity.World().ChunkAt(p_Entity.Pos());
+		var endChunk=p_Entity.World().ChunkAt(p_End);
+		var chunks=[];
+		if(startChunk!==endChunk){
+			var idx0=startChunk.ChunkIndex();
+			var idx1=endChunk.ChunkIndex();
+			var dx=Math.abs(idx0.X()-idx1.X());
+			var dy=Math.abs(idx0.Y()-idx1.Y());
+			
+			var func=(idx0.X()<idx1.X())?'Right':'Left';
+			var i,iC=dx;
+			var idx=idx0.Copy();
+			var world=p_Entity.World();
+			for(i=0;i<=iC;i++){
+				chunks.push(world.GetChunk(idx));
+				idx[func]();
+			}
+			func=(idx0.Y()<idx1.Y())?'Down':'Up';
+			idx.Set(idx1.X(),idx.Y());
+			iC=dy;
+			for(i=0;i<=iC;i++){
+				var c=world.GetChunk(idx);
+				if(chunks.indexOf(c)==-1){
+					chunks.push(world.GetChunk(idx));
+				}
+				idx[func]();
+			}
+		}else{
+			chunks.push(startChunk);
+		}
+		
+		if(chunks.length>1){
+			var i=0;
+			var ret=[];
+			while(chunks[i]){
+				var currentChunk=chunks[i];
+				var nextChunk=false;
+				if(chunks[i+1]!==undefined){
+					nextChunk=chunks[i+1];
+					var currentChunkIndex=currentChunk.ChunkIndex();
+					var nextChunkIndex=nextChunk.ChunkIndex();
+					var dx=nextChunkIndex.X()-currentChunkIndex.X();
+					var dy=nextChunkIndex.Y()-currentChunkIndex.Y();
+					
+					var tm=currentChunk.Tilemanager();
+					var ntm=nextChunk.Tilemanager();
+					var currentTile=false;
+					if(ret.length>0){
+						var ct=currentTile=ret[0].t;
+						currentTile=tm.TileAtPos(ct.WorldCoords());
+					}else{
+						currentTile=tm.TileAtPos(p_Entity.m_Pos);
+					}
+					
+					var borderTile=false;
+					var nextBorderTile=false;
+					if(dx!=0){
+						if(dx>0){
+							borderTile=tm.GetBorderTileOnTileAxis(currentTile,'RIGHT');
+							nextBorderTile=ntm.GetBorderTileOnTileAxis(currentTile,'LEFT');
+						}else{
+							borderTile=tm.GetBorderTileOnTileAxis(currentTile,'LEFT');
+							nextBorderTile=ntm.GetBorderTileOnTileAxis(currentTile,'RIGHT');
+						}
+					}else if(dy!=0){
+						if(dy>0){
+							borderTile=tm.GetBorderTileOnTileAxis(currentTile,'DOWN');
+							nextBorderTile=ntm.GetBorderTileOnTileAxis(currentTile,'UP');
+						}else{
+							borderTile=tm.GetBorderTileOnTileAxis(currentTile,'UP');
+							nextBorderTile=ntm.GetBorderTileOnTileAxis(currentTile,'DOWN');
+						}
+					}
+					var temp=false;
+					if(ret.length<=0){
+						temp=xThis.Solve(p_Entity.Pos(),borderTile.WorldCoords(),currentChunk);
+					}else{
+						temp=xThis.Solve(ret[0].t.WorldCoords(),borderTile.WorldCoords(),currentChunk);
+					}
+					temp.unshift({t:nextBorderTile});
+					ret=temp.concat(ret);
+				}else{
+					ret=(xThis.Solve(ret[0].t.WorldCoords(),p_End,currentChunk)).concat(ret);
+				}
+				i++;
+			}
+			return ret;
+		}else{
+			return xThis.Solve(p_Entity.Pos(),p_End,chunks[0]);
+		}
 	}
 }
 

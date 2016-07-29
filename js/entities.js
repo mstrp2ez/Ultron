@@ -263,9 +263,18 @@ var Worker=function(p_Pos,p_World){
 					GameState.Set('WorkerState',{s:xThis.WorkerState.WORKER_NONE,e:this});
 					var route=new Route();
 					var worldCoord=Camera.ScreenSpaceToWorldSpace(mx,my);
-					xThis.m_Path=route.CalculateRoute(xThis,new Vec2d(worldCoord.x,worldCoord.y));
+
+					xThis.m_Path=route.CalculateRoute(xThis,new Vec2d(mx,my));
 					if(xThis.m_Path.length){
 						xThis.m_LerpPath=new TilePathLerp(xThis.m_Path,xThis);
+						var i,iC=xThis.m_Path.length;
+						for(i=0;i<iC;i++){
+							var dp=xThis.m_Path[i].t.WorldCoords();
+							var debug=new debugSquare(new Vec2d(dp.m_fX,dp.m_fY),new Vec2d(16,16));
+							setTimeout(function(){
+								Renderer.RemoveRenderable(debug);
+							},4000);
+						}
 					}
 				}
 			}

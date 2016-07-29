@@ -1,5 +1,3 @@
-
-
 var Renderer=function(){
 	this.BACKGROUND_LAYER=0;
 	this.FOREGROUND_LAYER=1;
@@ -65,3 +63,26 @@ Renderable.prototype.RenderLayer=function(){
 Renderable.prototype.SetRenderLayer=function(p_Layer){
 	xThis.m_Layer=p_Layer;
 }
+
+var debugSquare=function(p_Pos,p_Dim){
+	Renderable.call(this,1);
+	this.m_Pos=p_Pos;
+	this.m_Dim=p_Dim;
+	
+	this.Render=function(p_Ctx){
+		var offset=Camera.Offset();
+		var x=p_Pos.m_fX;//+offset.m_fX;
+		var y=p_Pos.m_fY;//+offset.m_fY;
+		p_Ctx.strokeStyle='#000';
+		p_Ctx.lineWidth=1;
+		p_Ctx.beginPath();
+		p_Ctx.moveTo(x,y);
+		p_Ctx.lineTo(x+p_Dim.m_fX,y);
+		p_Ctx.lineTo(x+p_Dim.m_fX,y+p_Dim.m_fY);
+		p_Ctx.lineTo(x,y+p_Dim.m_fY);
+		p_Ctx.closePath();
+		p_Ctx.stroke();
+	}
+}
+debugSquare.prototype=Object.create(Renderable.prototype);
+debugSquare.prototype.constructor=debugSquare;
