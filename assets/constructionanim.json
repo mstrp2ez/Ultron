@@ -1,0 +1,5 @@
+{"rates":[500,500,100],"src":"assets/entities/construction/structureconstruction.png",
+"a":[[{"x":0,"y":0,"w":92,"h":64}],
+	[{"x":0,"y":64,"w":92,"h":64}],
+	[{"x":0,"y":128,"w":92,"h":64}]
+	]}

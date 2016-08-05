@@ -50,3 +50,73 @@ var PerlinNoise=function(){
 	   } 
 	   function scale(n) { return (1 + n)/2; }
 }
+
+var LerpV2=function(){
+	this.m_V0=false;
+	this.m_V1=false;
+	this.m_Current=false;
+	this.m_t=0;
+	this.m_LerpTime=0.2;
+	this.m_LastUpdate=0;
+	this.m_Done=true;
+	
+	var xThis=this;
+	this.Init=function(p_V0,p_V1,p_MoveSpeed){
+		xThis.m_V0=p_V0.Copy();
+		xThis.m_Current=p_V0.Copy();
+		xThis.m_V1=p_V1.Copy();
+		xThis.m_t=0;
+		xThis.m_Done=false;
+		if(p_MoveSpeed!==undefined){
+			xThis.m_LerpTime=p_MoveSpeed;
+		}
+	}
+	this.Done=function(){
+		return xThis.m_Done;
+	}
+	this.Update=function(p_Time){
+		if(!xThis.m_V0||!xThis.m_V1||xThis.m_Done){return;}
+		xThis.m_LastUpdate=(xThis.m_LastUpdate==0)?p_Time:xThis.m_LastUpdate;
+		var delta=p_Time-xThis.m_LastUpdate;
+		xThis.m_LastUpdate=p_Time;
+		var v0=xThis.m_V0;
+		var v1=xThis.m_V1;
+		xThis.m_t+=(delta/1000)/xThis.m_LerpTime;
+		
+		//console.log(1/((delta/1000)/xThis.m_LerpTime));
+		
+		if(xThis.m_Done||xThis.m_t>=1){
+			xThis.m_Done=true;
+			return;
+		}
+		
+		xThis.m_Current.m_fX=v0.m_fX+(v1.m_fX-v0.m_fX)*xThis.m_t;
+		xThis.m_Current.m_fY=v0.m_fY+(v1.m_fY-v0.m_fY)*xThis.m_t;
+	}
+	this.Current=function(){
+		return xThis.m_Current.Copy();//.AddV(Camera.Offset());
+	}
+}
+var TilePathLerp=function(p_Path,p_Entity){
+	this.m_Lerp=new LerpV2();
+	this.m_Entity=p_Entity;
+	this.m_Path=p_Path;
+	
+	var xThis=this;
+	this.Update=function(p_Time){
+		if(xThis.m_Lerp.Done()&&xThis.m_Path.length){
+			var node=xThis.m_Path.pop();
+			var vTarget=node.t.WorldCoords();
+			var movespeed=(xThis.m_Entity.MoveSpeed!==undefined)?xThis.m_Entity.MoveSpeed():10;
+			var vStart=xThis.m_Entity.m_Pos.Copy();
+			vStart.AddV(Camera.Offset());
+			xThis.m_Lerp.Init(vStart,vTarget,movespeed);
+		}
+		if(!xThis.m_Lerp.Done()){
+			xThis.m_Lerp.Update(p_Time);
+			var v=xThis.m_Lerp.Current();
+			v.SubV(Camera.Offset());
+			xThis.m_Entity.m_Pos.Set(v.m_fX,v.m_fY);
+		}
+	}
+}
