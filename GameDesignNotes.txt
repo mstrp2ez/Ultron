@@ -1,0 +1,12 @@
+Buildings are the building blocks for the basic game loop.
+Buildings produce workers that then "power" the rest of the game loop.
+
+Buildings allow worker to perform tasks that they otherwise could not.
+Mines allow workers to mine for metals and minerals, farms allow workers to harvest crops etc.
+The resources gathered are then used to create more advanced buildings.
+
+There is a soft cap for how many workers a player can have in the world at any given time, this cap is 
+reliant on worker housing and on avaliable food. Therefore workers are also a kind of resource that the player
+has to manage.
+
+Cottage - Increases the worker hard cap. 

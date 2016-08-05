@@ -1,0 +1,9 @@
+{
+	"caption":"Farm",
+	"mainIco":"assets/ui/farmico.png",
+	"resourceIco":"assets/ui/workerico.png",
+	"description":"Produces food for workers",
+	"buildingtype":"Farm",
+	"cropanimsrc":"assets/crop.json",
+	"croppos":[74,40]
+}

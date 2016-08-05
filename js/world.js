@@ -51,6 +51,7 @@ var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
 	this.m_Debug=false;
 	this.m_Entity=null;
 	this.m_Origin=p_Origin;
+	this.m_Walkable=true;
 	
 	var xThis=this;
 	this.FillColor=function(p_FillColor){
@@ -73,6 +74,9 @@ var Tile=function(p_Col,p_Row,p_TileProperties,p_Origin,p_Atlas){
 	}
 	this.TileIndex=function(){
 		return xThis.m_Index;
+	}
+	this.IsWalkable=function(){
+		return xThis.m_Walkable;
 	}
 	this.SetTileIndex=function(p_Index){
 		var size=xThis.m_Size;
@@ -160,18 +164,38 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		return xThis.m_Tiles[p_Col+'x'+p_Row];
 	}
 	this.TileAtPos=function(p_Pos){
+		var p=p_Pos.Copy();
 		var offset=Camera.Offset();
-		p_Pos.SubV(offset);
+		p.SubV(offset);
 		var ox=xThis.m_Origin.m_fX;
 		var oy=xThis.m_Origin.m_fY;
 		
-		var x=p_Pos.m_fX-ox;
-		var y=p_Pos.m_fY-oy;
+		var x=p.m_fX-ox;
+		var y=p.m_fY-oy;
 		var size=xThis.m_TileProperties.size;
 		var col=Math.floor(x/size);
 		var row=Math.floor(y/size);
 		
 		return xThis.TileAt(col,row);
+	}
+	this.TilesInArea=function(p_TopLeft,p_BottomRight){
+		var x0=p_TopLeft.m_fX;
+		var x1=p_BottomRight.m_fX;
+		var y0=p_TopLeft.m_fY;
+		var y1=p_BottomRight.m_fY;
+		var ret=[];
+		
+		//var i,iC=xThis.m_Tiles.length;
+		for(var idx in xThis.m_Tiles){
+			var tile=xThis.m_Tiles[idx];
+			var wc=tile.WorldCoords();
+			if(wc.m_fX>x0&&wc.m_fX<x1){
+				if(wc.m_fY>y0&&wc.m_fY<y1){
+					ret.push(tile);
+				}
+			}
+		}
+		return ret;
 	}
 	this.SetNeighbors=function(p_Neighbors){
 		xThis.m_Neighbors=p_Neighbors;
@@ -222,13 +246,13 @@ var TileManager=function(p_Origin,p_Size,p_TileProperties,p_Atlas,p_Chunk){
 		var perlin=new PerlinNoise();
 		var i,iC=(tiledW*tiledH);
 		var bitmap=[];
-		var seed=0.8;
+		var seed=1.9;
 		for(i=0;i<iC;i++){
 			var a=(col+(p_ChunkIndex.X()*tiledW))/tiledW;
 			var b=(row+(p_ChunkIndex.Y()*tiledH))/tiledH;
 			var noise=perlin.noise(a,b,seed)*255;
 			var shade=Math.floor(noise);
-			shade=(shade<70)?0:255;
+			shade=(shade<80)?0:255;
 			bitmap.push(shade);
 			row=((i+1)%(tiledW)==0&&i!=0)?row+1:row;
 			col=((i+1)%(tiledH)==0&&i!=0)?0:col+1;
@@ -440,7 +464,7 @@ var Route=function(){
 			var nb=tileM.GetNeighbors(current.t);
 			var i,iC=nb.length;
 			for(i=0;i<iC;i++){
-				if(nb[i]){
+				if(nb[i]&&nb[i].IsWalkable()){
 					var newNode={t:nb[i],f:0,p:current};
 					newNode.f=calcF(newNode);
 					var existing=containsNode(open,newNode);
@@ -475,7 +499,9 @@ var Route=function(){
 	
 	this.CalculateRoute=function(p_Entity,p_End){
 		if(p_Entity===undefined||p_End===undefined){return [];}
-		var startChunk=p_Entity.World().ChunkAt(p_Entity.Pos());
+		var entPos=p_Entity.Pos().Copy();
+		entPos.AddV(Camera.Offset());
+		var startChunk=p_Entity.World().ChunkAt(entPos);
 		var endChunk=p_Entity.World().ChunkAt(p_End);
 		var chunks=[];
 		if(startChunk!==endChunk){
@@ -526,7 +552,7 @@ var Route=function(){
 						var ct=currentTile=ret[0].t;
 						currentTile=tm.TileAtPos(ct.WorldCoords());
 					}else{
-						currentTile=tm.TileAtPos(p_Entity.m_Pos);
+						currentTile=tm.TileAtPos(entPos);
 					}
 					
 					var borderTile=false;
@@ -550,7 +576,7 @@ var Route=function(){
 					}
 					var temp=false;
 					if(ret.length<=0){
-						temp=xThis.Solve(p_Entity.Pos(),borderTile.WorldCoords(),currentChunk);
+						temp=xThis.Solve(entPos,borderTile.WorldCoords(),currentChunk);
 					}else{
 						temp=xThis.Solve(ret[0].t.WorldCoords(),borderTile.WorldCoords(),currentChunk);
 					}
@@ -563,7 +589,7 @@ var Route=function(){
 			}
 			return ret;
 		}else{
-			return xThis.Solve(p_Entity.Pos(),p_End,chunks[0]);
+			return xThis.Solve(entPos,p_End,chunks[0]);
 		}
 	}
 }
@@ -586,6 +612,22 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		xThis.m_TileManager=new TileManager(xThis.WorldCoordinates(),xThis.m_ChunkProperties.size,xThis.m_ChunkProperties.tile,p_Atlas,xThis);
 		xThis.m_TileManager.FillPerlinNoise(xThis.m_ChunkIndex);
 		xThis.m_TileManager.ReCalculate();
+		
+		Entities.NewEntity('Plant',{px:200,py:300,anim:'assets/oak.json',world:xThis.m_World});
+		/* var tileSize=xThis.m_ChunkProperties.tile.size;
+		var chunkSize=xThis.m_ChunkProperties.size;
+		
+		var i,iC=20;
+		for(i=0;i<iC;i++){
+			var col=Math.floor(Math.random()*(chunkSize/tileSize));
+			var row=Math.floor(Math.random()*(chunkSize/tileSize));
+			
+			var wc=xThis.WorldCoordinates();
+			var x=wc.m_fX+(col*tileSize);
+			var y=wc.m_fY+(row*tileSize);
+			
+			Entities.NewEntity('Plant',{px:x,py:y,anim:'assets/treeanim.json',world:xThis.m_World});
+		} */
 	}
 	this.World=function(){
 		return xThis.m_World;
@@ -604,6 +646,9 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 	}
 	this.ChunkTileSize=function(){
 		return xThis.m_ChunkProperties.size/xThis.m_ChunkProperties.tile.size;
+	}
+	this.ChunkProperties=function(){
+		return xThis.m_ChunkProperties;
 	}
 	this.InViewport=function(){
 		var wc=xThis.WorldCoordinates();
@@ -648,8 +693,8 @@ var Chunk=function(p_ChunkProperties,p_ChunkIdx,p_World){
 		var py=p_Point.m_fY;
 		var y0=wc.m_fY;
 		var y1=wc.m_fY+size;
-		if(x0-px<=0&&x1-px>=0){
-			if(y0-py<=0&&y1-py>=0){
+		if(x0-px<=0&&x1-px>0){
+			if(y0-py<=0&&y1-py>0){
 				return true;
 			}
 		}
@@ -747,8 +792,9 @@ var World=function(){
 			}
 			atlasCache.src=xThis.m_ChunkProperties.atlas[0];
 		}); 
-		
-	}
+		var id=BitmapTextHelper.PutText('Ultron, baby!',new Vec2d(200,100));
+		BitmapTextHelper.RemoveText(id);
+	}//abcdefghijklmnopqrstuvwxyz
 	
 	//use index as key, guarantees no chunk key is ever the same, could be costly to iterate chunks though
 	this.NewChunk=function(p_ChunkIndex,p_Shallow){

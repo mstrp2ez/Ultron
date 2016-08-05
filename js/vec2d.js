@@ -73,4 +73,12 @@ var Vec2d=function(p_fX,p_fY){
 	this.Copy=function(){
 		return new Vec2d(xThis.m_fX,xThis.m_fY);	
 	}
+	this.Distance2=function(p_V0){
+		var dx=p_V0.m_fX-xThis.m_fX;
+		var dy=p_V0.m_fY-xThis.m_fY;
+		return Math.sqrt((dx*dx)+(dy*dy));
+	}
+	this.ToString=function(){
+		return xThis.m_fX+','+xThis.m_fY;
+	}
 }

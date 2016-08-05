@@ -79,7 +79,7 @@
 		"chunkproperties":{
 			"size":400,
 			"atlas":["assets/tileatlas.png"],
-			"debug":true,
+			"debug":false,
 			"tile":{
 				"size":16,
 				"atlasHeight":48
@@ -106,20 +106,19 @@
 			},
 			"ControlPanel": {
 				"p": {
-					"x": "center",
+					"x": "left",
 					"y": "bottom",
-					"w": 800,
-					"h": 80,
-					"bgcolor": "#444"
+					"w": 250,
+					"h": 100,
+					"imgsrc": "assets/controlpanelbg.png"
 				},
 				"cw":{
 					"WorkerUIElement":{
 						"p":{
-							"x":0,
-							"y":0,
+							"x":10,
+							"y":40,
 							"w":300,
 							"h":80,
-							"bgcolor":"#222",
 							"visible":false
 						},
 						"cw":{
@@ -141,12 +140,149 @@
 									"y":0,
 									"w":40,
 									"h":40,
-									"imgsrc":"assets/ui/workbuildico.png"
+									"imgsrc":"assets/ui/hammerico.png"
 								},
 								"events":{
 									"click":"onWorkerBtnClick"
 								}
 							}
+						}
+					},
+					"BuildingSubPanel":{
+						"type":"AnimatedWidget",
+						"p":{
+							"x":250,
+							"y":"bottom",
+							"w":400,
+							"h":64,
+							"visible":false,
+							"startanim":0,
+							"startframe":3,
+							"animsrc":"assets/uisubpanelanim.json"
+						},
+						"cw":{
+							"BuildCottageBtn":{
+								"p":{
+									"x":12,
+									"y":12,
+									"w":40,
+									"h":40,
+									"imgsrc":"assets/ui/cottageico.png",
+									"customdata":{
+										"animsrc":"assets/constructionanim.json",
+										"buildingdata":"assets/buildings/cottage.json"
+									}
+								},
+								"events":{
+									"click":"onBuildingBtnClick"
+								}
+							},
+							"BuildFarmBtn":{
+								"p":{
+									"x":64,
+									"y":12,
+									"w":40,
+									"h":40,
+									"imgsrc":"assets/ui/farmico.png",
+									"customdata":{
+										"animsrc":"assets/farmconstruction.json",
+										"buildingdata":"assets/buildings/farm.json",
+										"buildingtype":"Farm"
+									}
+								},
+								"events":{
+									"click":"onBuildingBtnClick"
+								}
+							}
+						}
+					}
+				}
+			},
+			"ResourceBar":{
+				"p":{
+					"x":0,
+					"y":0,
+					"w":800,
+					"h":30,
+					"bgcolor":"#111"
+				},
+				"cw":{
+					"WorkerCountIco":{
+						"p":{
+							"x":20,
+							"y":8.5,
+							"w":16,
+							"h":16,
+							"imgsrc":"assets/ui/workercountico.png"
+						}
+					},
+					"WorkerCountValue":{
+						"p":{
+							"x":40,
+							"y":8.5,
+							"w":32,
+							"h":16,
+							"text":1,
+							"textcolor":"#eee"
+						}
+					}
+				}
+			},
+			"BuildingUIPanel":{
+				"p":{
+					"x":"center",
+					"y":"center",
+					"w":320,
+					"h":270,
+					"bgcolor":"#222",
+					"visible":false
+				},
+				"cw":{
+					"BuildingIcon":{
+						"p":{
+							"x":14,
+							"y":14,
+							"w":40,
+							"h":40,
+							"imgsrc":"assets/ui/workbuildico.png"
+						}
+					},
+					"BuildingNameCaption":{
+						"p":{
+							"x":100,
+							"y":14,
+							"w":220,
+							"h":20,
+							"textcolor":"#fff",
+							"font":"24px Arial, sans-serif",
+							"text":"Building Name"
+						}
+					},
+					"BuildingAssetIcon":{
+						"p":{
+							"x":14,
+							"y":100,
+							"w":40,
+							"h":40
+						}
+					},
+					"BuildingAsset2Icon":{
+						"p":{
+							"x":14,
+							"y":160,
+							"w":40,
+							"h":40
+						}
+					},
+					"BuildingDescription":{
+						"p":{
+							"x":64,
+							"y":64,
+							"w":320,
+							"h":120,
+							"text":"Description",
+							"font":"14px Arial, sans-serif",
+							"textcolor":"#fff"
 						}
 					}
 				}

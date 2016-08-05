@@ -4,6 +4,8 @@
 body{
 	background-color:#000;
 	width:100%;
+	padding:0;
+	margin:0;
 }
 .canvas-container{
 	
@@ -26,6 +28,7 @@ body{
 <script src="js/camera.js"></script>
 <script src="js/animation.js"></script>
 <script src="js/renderer.js"></script>
+<script src="js/bitmapfont.js"></script>
 <script src="js/entities.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/nature.js"></script>

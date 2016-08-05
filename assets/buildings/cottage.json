@@ -1,0 +1,7 @@
+{
+	"caption":"Cottage",
+	"mainIco":"assets/ui/cottageico.png",
+	"resourceIco":"assets/ui/workerico.png",
+	"description":"Housing for workers",
+	"entrance":[52,60]
+}
